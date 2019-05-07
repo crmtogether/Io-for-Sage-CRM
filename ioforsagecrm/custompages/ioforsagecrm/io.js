@@ -1,50 +1,71 @@
-/******
 
-Copyright 2013 'CRM Together' - www.crmtogether.com
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-
-
-*******/
-
-/******
- *
- *Requires JQuery
- *  
-*******/     
-
-var G_CRMNative=false;
-try{
-  if (crm+""!="undefined")
-  {
-    G_CRMNative=true;
-  }         
-}catch(e){
-  //do nothing yet
-}
-
-if (!G_CRMNative)
+console.log('Loading js/io.js');
+var CRMIO = null;
+//examples
+crm.ready(function()
 {
 
-  function CRMObject() {
-    this.mainTable=$(".ROWGap").parent().parent().parent();
-    this.companyboxlong=this.getBox("Company", false);
-    this.personboxlong=this.getBox("Contact", false);
+
+  CRMIO = new CRMObject(); 
+  //CRMIO.infoMsg("IO loaded");
+  //CRMIO.highLightStructure();
+  //CRMIO.insertData("Hello world",0); //under Company summary
+  //CRMIO.insertData("Hello world",1);//under address etc
+  //var _url=CRMIO.buildUrl('ioserver/dispatcher.asp');
+  //alert(_url);
+  //CRMIO.insertData("Loading...",0)
+  //CRMIO.getData(_url, CRMIO.insertData,0, '','getperson');
   
-    this.addressboxlong=this.getBox("Address", true);
-    this.phoneemailbox=this.getBox("Phone/E-mail", true);
-    
-  }
+  //hide system contact box
+  //CRMIO.hideBox(CRMIO.personboxlong);
+  
+  //pie chart demo
+  //CRMIO.getData(_url, CRMIO.insertData,0, '','piechart');
+  
+});
+
+function __GetKeys() {
+    var res = "";
+    try {
+        res = GetKeys();
+    } catch (e) { }
+
+    return res;
+}
+
+CRMObject.prototype.getData = function (__url, callback, _row, postdata, action) {
+	if (action)
+	{
+		__url+="&dispaction="+action;
+	}
+    $.ajax({
+        type: "post",
+        url: __url,
+        dataType: "text",
+        data: postdata,
+        async: true,
+        crossDomain: true,
+        beforeSend: function () {
+        },
+        timeout: 100000,
+        error: function (request, error, status) {
+            console.log('Request Data:' + postdata);
+            console.log("ERROR: " + error + "\nStatus:" + status + "\nData:" + request.responseText);
+        },
+        success: function (requestresult) {
+            callback(requestresult,_row, action);
+        } // End success
+    }); // End ajax method
+}
+
+
+function CRMObject() {
+	this.mainTable=$(".ROWGap").parent().parent().parent();
+	this.companyboxlong=this.getBox("Company", false);
+	this.personboxlong=this.getBox("Contact", false);
+
+	this.addressboxlong=this.getBox("Address", true);
+	this.phoneemailbox=this.getBox("Phone/E-mail", true); 
 }
 //returns an array with pointer to header, body and footer
 CRMObject.prototype.getBox = function (boxName,split) {
@@ -79,35 +100,11 @@ CRMObject.prototype.hideBox = function (obj) {
   obj[2].hide();
 }
 
-CRMObject.prototype.addLinkedIn = function (fieldName,div) {
-	this.addToButtonGroup("<span id=\"bofa\"></span><span id=\"bofacc\"></span>");
-	$.getScript("http://www.linkedin.com/companyInsider?script&useBorder=no")
-		.done(function(script, textStatus) {
-				waitForLinkedIn(fieldName);
-		})
-		.fail(function(jqxhr, settings, exception) {
-		  //alert(exception);//IE may fail as Linkedin does not support it fully
-	});
-}
-
-function waitForLinkedIn(fieldName){
-    if(typeof LinkedIn !== "undefined"){
-				var dval = document.getElementById("_Data"+fieldName).innerHTML;
-				new LinkedIn.CompanyInsiderBox(div,dval);//div should be "bofa"
-    }
-    else{   
-        setTimeout(function(){
-            waitForLinkedIn(fieldName);
-        },1000);
-    }
-}
-
 CRMObject.prototype.insertInfo = function (htmlData, rowIndex, action) {
   CRMIO.infoMsg(htmlData);
 }
 CRMObject.prototype.infoMsg= function (msg) {
-  $('#WkRl').html('<span class="InfoContent"  >'+msg+'</span>');
-  $('#WkRl').show();
+  crm.infoMessage(msg);
 }
 
 CRMObject.prototype.highLightStructure = function () {
@@ -116,38 +113,18 @@ CRMObject.prototype.highLightStructure = function () {
 }
 
 CRMObject.prototype.insertData = function (htmlData, rowIndex, action) {
-  $(".ROWGap").get()[rowIndex].innerHTML=htmlData;
+	if (!rowIndex)
+		rowIndex=0;
+  $($(".ROWGap").get()[rowIndex]).append(htmlData);
   if ($("#"+action+"Container").get(0)+""!="undefined"){
     var Container=$("#"+action+"Container").get(0);
-    $(Container.childNodes[0].childNodes[0].childNodes[0].cells[1]).hide();
+   // $(Container.childNodes[0].childNodes[0].childNodes[0].cells[1]).hide();
   }
 }
 
 
 CRMObject.prototype.buildUrl = function (PagePath) {
-  var strFileName = PagePath;
-  var strPath = document.URL;
-  if (strPath.indexOf("eware.dll")!=-1)
-  {
-    var arrayApp = strPath.split("eware.dll");  
-    PagePath="CustomPages/"+PagePath;
-  }else{
-    var arrayApp = strPath.split("CustomPages");
-    arrayApp[0]+="CustomPages/";
-  }
-  var arrayContext = strPath.split("?");
-  var strAppPath = arrayApp[0];
-  var strContextInfo = arrayContext[1];
-  strAddr= strAppPath + PagePath+"?"+strContextInfo+"&";
-  return strAddr; 
-}
-
-CRMObject.prototype.getData = function (url, callback, params, action) {
-	$.get(url, function(data) {
-		callback(data,params, action);
-	}).error(function(xhr, statusText) {
-    alert('Error:'+xhr.responseText); // or whatever
-});
+  return crm.url(PagePath);
 }
 
 CRMObject.prototype.getButtonGroup = function () {
@@ -192,6 +169,7 @@ CRMObject.prototype.smartLookup = function (fieldName) {
 		});	
 	}
 }
+
 CRMObject.prototype.smartLookupCallBack = function (htmlData, fieldName) {
   if(CRMIO.getScreenMode("comp_name")==0)
     {
@@ -212,8 +190,3 @@ CRMObject.prototype.smartLookupCallBack = function (htmlData, fieldName) {
   });
   $("#"+fieldName).val(currentValue);
 }
-  
-var CRMIO = new CRMObject();
-
-
-
