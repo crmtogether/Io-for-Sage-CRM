@@ -11,7 +11,7 @@ crm.ready(function()
   //CRMIO.highLightStructure();
   //CRMIO.insertData("Hello world",0); //under Company summary
   //CRMIO.insertData("Hello world",1);//under address etc
-  //var _url=CRMIO.buildUrl('ioserver/dispatcher.asp');
+  //var _url=CRMIO.buildUrl('ioforsagecrm/dispatcher.asp');
   //alert(_url);
   //CRMIO.insertData("Loading...",0)
   //CRMIO.getData(_url, CRMIO.insertData,0, '','getperson');
